@@ -114,8 +114,9 @@ impl DialogHandler {
         });
 
         let author_name = body.and_then(|b| b.from.as_ref()).and_then(|a| a.username.clone());
+        let is_bot = body.and_then(|b| b.from.as_ref()).map(|a| a.is_bot).unwrap_or(false);
 
-        text.map(|text| MessageData::new(msg.id.0, text, author_name))
+        text.map(|text| MessageData::new(msg.id.0, text, author_name, is_bot))
     }
 
     async fn get_message_response(&self, openai: &OpenAiClient, prompt: impl Iterator<Item = &OpenAiChatMessage>) -> Result<String, ()> {
@@ -148,7 +149,7 @@ impl DialogHandler {
             let is_participating = state.is_participating();
 
             if match last_message {
-                DialogMessage::Reply { reply_to, .. } => reply_to.get_author_name().is_none(),
+                DialogMessage::Reply { reply_to, .. } => reply_to.is_bot(),
                 _ => is_participating || contains,
             } {
                 info!(?is_participating, mentioned = contains, mention = "replying to dialog");
